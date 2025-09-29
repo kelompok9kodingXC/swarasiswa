@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suara SMANIDA - Aplikasi Pengaduan Siswa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #4a2c2a;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%236b4642' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .font-serif { font-family: 'Lora', serif; }
+        .page { display: none; }
+        .page.active { display: block; animation: fadeIn 0.5s; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #c8a365;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .chat-bubble { max-width: 80%; padding: 10px 15px; border-radius: 20px; word-wrap: break-word; }
+        .chat-pelapor { background-color: #fffbeb; border: 1px solid #fef3c7; align-self: flex-start; }
+        .chat-admin { background-color: #fef2f2; border: 1px solid #fee2e2; align-self: flex-end; }
+        .category-card { transition: transform 0.2s, box-shadow 0.2s; }
+        .category-card:hover { transform: translateY(-5px); box-shadow: 0 4px 10px -2px rgba(0,0,0, 0.1); }
+        #app-header { display: none; }
+        .card {
+            background-color: #fffaf0; /* Floral White */
+            border: 1px solid rgba(120, 53, 15, 0.1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+    </style>
+</head>
+<body class="text-stone-800">
+
+    <div id="app" class="max-w-4xl mx-auto p-4 md:p-6">
+        
+        <header id="app-header" class="card rounded-xl p-4 mb-6 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-red-900 p-2 rounded-full">
+                    <svg class="w-8 h-8 text-amber-300" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M16.383 11.513c.87-.585 1.406-1.63 1.406-2.824 0-1.87-1.35-3.41-3.03-3.41-1.11 0-2.1.69-2.636 1.716a2.45 2.45 0 00-.313-.01c-1.11 0-2.1.69-2.637 1.716C8.63 5.279 7.28 6.819 7.28 8.69c0 1.192.537 2.238 1.407 2.823L12 14.24l4.383-2.727zM12 15.39l-6.23-3.88C4.04 10.53 3 8.78 3 6.81 3 3.61 5.69 1 9.25 1c2.15 0 4.07 1.2 4.97 3.03.3-.1.62-.16.96-.16 1.07 0 2.05.41 2.79 1.14C19.16 6.2 20 8.1 20 10.21c0 2.2-1.4 4.12-3.37 4.88L12 18.61l-1.39-1.93L12 15.39z" fill="currentColor"/>
+                        <path d="M12.01 19.34l3.52 2.52-1.3-4.11" fill="currentColor"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-bold font-serif text-amber-900">Suara SMANIDA</h1>
+                    <p class="text-xs md:text-sm text-stone-500">Selamat datang, <span id="user-name-display" class="font-semibold"></span>!</p>
+                </div>
+            </div>
+             <div class="flex items-center space-x-2">
+                <button id="home-btn" class="text-stone-500 hover:text-red-800 transition" title="Halaman Utama">
+                     <i data-lucide="home" class="w-6 h-6"></i>
+                </button>
+                <button id="admin-view-btn" class="text-stone-500 hover:text-red-800 transition hidden" title="Dasbor Admin">
+                    <i data-lucide="layout-dashboard" class="w-6 h-6"></i>
+                </button>
+                <button id="logout-btn" class="text-stone-500 hover:text-red-800 transition" title="Keluar">
+                    <i data-lucide="log-out" class="w-6 h-6"></i>
+                </button>
+            </div>
+        </header>
+
+        <main>
+            <!-- Halaman Login -->
+            <div id="login-page" class="page active">
+                <div class="card rounded-xl p-8 max-w-md mx-auto mt-10">
+                    <div class="text-center mb-8">
+                         <div class="bg-red-900 p-3 rounded-full inline-block mb-4">
+                            <svg class="w-12 h-12 text-amber-300" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M16.383 11.513c.87-.585 1.406-1.63 1.406-2.824 0-1.87-1.35-3.41-3.03-3.41-1.11 0-2.1.69-2.636 1.716a2.45 2.45 0 00-.313-.01c-1.11 0-2.1.69-2.637 1.716C8.63 5.279 7.28 6.819 7.28 8.69c0 1.192.537 2.238 1.407 2.823L12 14.24l4.383-2.727zM12 15.39l-6.23-3.88C4.04 10.53 3 8.78 3 6.81 3 3.61 5.69 1 9.25 1c2.15 0 4.07 1.2 4.97 3.03.3-.1.62-.16.96-.16 1.07 0 2.05.41 2.79 1.14C19.16 6.2 20 8.1 20 10.21c0 2.2-1.4 4.12-3.37 4.88L12 18.61l-1.39-1.93L12 15.39z" fill="currentColor"/>
+                                <path d="M12.01 19.34l3.52 2.52-1.3-4.11" fill="currentColor"/>
+                            </svg>
+                        </div>
+                        <h2 class="text-3xl font-bold font-serif text-amber-900">Login Suara SMANIDA</h2>
+                        <p class="text-stone-500 mt-2">Pilih peran Anda untuk melanjutkan.</p>
+                        <div class="mt-4 text-xs text-stone-400 flex justify-center items-center space-x-2">
+                            <i data-lucide="smartphone" class="w-4 h-4"></i>
+                            <i data-lucide="tablet" class="w-4 h-4"></i>
+                            <i data-lucide="laptop" class="w-4 h-4"></i>
+                            <span>Dapat diakses di semua perangkat</span>
+                        </div>
+                    </div>
+                    <div class="bg-amber-50 border border-amber-200 text-amber-900 text-xs p-3 rounded-md mb-6 text-center">
+                        <strong>Info:</strong> Aplikasi ini menyimpan data di perangkat Anda. Laporan tidak terkirim ke server pusat.
+                    </div>
+
+                    <div id="login-error" class="bg-red-100 border border-red-400 text-red-800 px-4 py-3 rounded-md relative mb-6 hidden" role="alert">
+                        <strong class="font-bold">Gagal!</strong>
+                        <span class="block sm:inline" id="login-error-message"></span>
+                    </div>
+
+                    <form id="login-form">
+                        <div class="mb-4">
+                            <label for="login-username" class="block text-sm font-medium text-stone-700 mb-1">Nama Pengguna</label>
+                            <input type="text" id="login-username" class="w-full px-3 py-2 bg-white border border-stone-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-800" placeholder="Masukkan nama pengguna admin" required>
+                        </div>
+                        <div id="password-field" class="mb-6">
+                            <label for="login-password" class="block text-sm font-medium text-stone-700 mb-1">Kata Sandi</label>
+                            <input type="password" id="login-password" class="w-full px-3 py-2 bg-white border border-stone-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-800" placeholder="Masukkan kata sandi admin" required>
+                        </div>
+                        <input type="hidden" id="login-role" value="admin">
+                        <button type="submit" class="w-full bg-red-800 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-900 transition duration-300 shadow-md shadow-red-800/20">
+                            Login
+                        </button>
+                    </form>
+                    <div class="mt-4 text-center">
+                        <button id="switch-to-siswa" class="text-sm text-red-800 hover:underline">Masuk sebagai Siswa</button>
+                        <button id="switch-to-admin" class="text-sm text-red-800 hover:underline hidden">Masuk sebagai Admin</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Halaman Utama (Siswa) -->
+            <div id="home-page" class="page">
+                <div class="card rounded-xl p-6">
+                    <div class="text-center mb-6">
+                        <h2 class="text-3xl font-bold font-serif text-amber-900 mb-2">Selamat Datang di Suara SMANIDA</h2>
+                        <p class="text-stone-600">Suarakan aspirasimu, bangun sekolah kita bersama.</p>
+                    </div>
+                    <div class="bg-amber-50 border-l-4 border-amber-500 text-amber-900 p-4 rounded-md mb-6" role="alert">
+                        <h3 class="font-bold mb-2 flex items-center"><i data-lucide="shield" class="w-5 h-5 mr-2 text-amber-600"></i> Privasi Anda Terjamin</h3>
+                        <p>Kami berkomitmen menjaga kerahasiaan setiap laporan. Gunakan opsi **lapor anonim** untuk isu-isu sensitif. Identitas Anda tidak akan pernah terungkap.</p>
+                    </div>
+                    <div class="mb-6">
+                        <h3 class="text-xl font-semibold font-serif mb-3 text-amber-900 border-b border-amber-800/10 pb-2">Panduan Menyuarakan Hak Suara</h3>
+                        <ul class="space-y-4 text-stone-700 mt-4">
+                            <li class="flex items-start"><span class="text-red-800 font-bold mr-3">1.</span> <span><strong>Jelas dan Spesifik:</strong> Sebutkan detail masalah, lokasi, dan waktu.</span></li>
+                            <li class="flex items-start"><span class="text-red-800 font-bold mr-3">2.</span> <span><strong>Gunakan Bahasa yang Sopan:</strong> Sampaikan kritik secara konstruktif.</span></li>
+                        </ul>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
+                        <button id="new-report-btn" class="w-full bg-gradient-to-r from-red-800 to-red-700 text-white font-bold py-3 px-4 rounded-lg hover:opacity-90 transition duration-300 flex items-center justify-center space-x-2 shadow-lg shadow-red-800/20"><i data-lucide="file-plus"></i><span>Buat Laporan Baru</span></button>
+                        <button id="track-report-btn" class="w-full bg-stone-700 text-white font-bold py-3 px-4 rounded-lg hover:bg-stone-800 transition duration-300 flex items-center justify-center space-x-2"><i data-lucide="search"></i><span>Lacak Laporan Saya</span></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Halaman Buat Laporan -->
+            <div id="form-page" class="page">
+                 <div class="card rounded-xl p-6">
+                    <h2 class="text-3xl font-bold font-serif mb-4 text-amber-900">Formulir Pengaduan</h2>
+                    <form id="report-form">
+                        <div class="mb-4">
+                            <label for="judul" class="block text-sm font-medium text-stone-700 mb-1">Judul Laporan</label>
+                            <input type="text" id="judul" name="judul" class="w-full bg-white px-3 py-2 border border-stone-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-800" placeholder="Contoh: Proyektor Kelas XII MIPA 1 Rusak" required>
+                        </div>
+                        <div class="mb-4">
+                            <label for="kategori" class="block text-sm font-medium text-stone-700 mb-1">Kategori Laporan</label>
+                            <select id="kategori" name="kategori" class="w-full bg-white px-3 py-2 border border-stone-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-800" required>
+                                <option value="Fasilitas">Fasilitas</option> <option value="Akademik/Guru">Akademik/Guru</option> <option value="Kesiswaan/Ekstrakurikuler">Kesiswaan/Ekstrakurikuler</option> <option value="Perundungan (Bullying)">Perundungan (Bullying)</option> <option value="Kebersihan">Kebersihan</option> <option value="Lainnya">Lainnya</option>
+                            </select>
+                        </div>
+                        <div class="mb-4">
+                            <label for="deskripsi" class="block text-sm font-medium text-stone-700 mb-1">Deskripsi Detail</label>
+                            <textarea id="deskripsi" name="deskripsi" rows="5" class="w-full bg-white px-3 py-2 border border-stone-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-800" placeholder="Jelaskan masalah secara rinci di sini..." required></textarea>
+                        </div>
+                        <div class="mb-6">
+                             <label class="block text-sm font-medium text-stone-700 mb-1">Identitas Pelapor</label>
+                             <div class="flex items-center space-x-4">
+                                <label class="flex items-center">
+                                    <input type="radio" name="identitas" value="nama" class="form-radio text-red-800 focus:ring-red-800" checked>
+                                    <span class="ml-2 text-stone-700">Gunakan Nama</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="radio" name="identitas" value="anonim" class="form-radio text-red-800 focus:ring-red-800">
+                                    <span class="ml-2 text-stone-700">Kirim sebagai Anonim</span>
+                                </label>
+                             </div>
+                             <input type="text" id="nama-pelapor" name="nama-pelapor" class="mt-2 w-full bg-white px-3 py-2 border border-stone-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-800" required>
+                        </div>
+                        <div class="flex items-center justify-end space-x-3">
+                            <button type="button" id="cancel-report-btn" class="bg-stone-200 text-stone-800 font-bold py-2 px-4 rounded-lg hover:bg-stone-300 transition">Batal</button>
+                            <button type="submit" class="bg-red-800 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-900 transition flex items-center shadow-md shadow-red-800/20">
+                                <span id="submit-text">Kirim Laporan</span>
+                                <div id="submit-loader" class="loader w-5 h-5 border-2 border-white border-t-transparent ml-2 hidden"></div>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Halaman Lacak Laporan -->
+            <div id="track-page" class="page">
+                <div class="card rounded-xl p-6">
+                    <h2 class="text-3xl font-bold font-serif mb-4 text-amber-900">Lacak Status Laporan</h2>
+                    <form id="track-form">
+                        <label for="kode_laporan" class="block text-sm font-medium text-stone-700 mb-1">Masukkan Kode Unik Laporan Anda</label>
+                        <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                            <input type="text" id="kode_laporan" name="kode_laporan" class="flex-grow w-full bg-white px-3 py-2 border border-stone-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-800" placeholder="Contoh: SMD-123456" required>
+                            <button type="submit" class="bg-red-800 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-900 transition shadow-md shadow-red-800/20">Lacak</button>
+                        </div>
+                    </form>
+                    <div id="track-result" class="mt-6"></div>
+                </div>
+            </div>
+
+            <!-- Halaman Admin -->
+            <div id="admin-page" class="page">
+                <div class="card rounded-xl p-6">
+                    <h2 class="text-3xl font-bold font-serif mb-2 text-amber-900">Dasbor Admin</h2>
+                    <p class="text-sm text-stone-500 mb-6">Ringkasan dan manajemen laporan siswa.</p>
+                    <div id="category-dashboard" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8"></div>
+                    <h3 class="text-xl font-bold font-serif mb-4 text-amber-900">Daftar Laporan (<span id="report-filter-status">Semua</span>)</h3>
+                    <div id="admin-report-list" class="space-y-4">
+                        <div id="admin-loader" class="text-center p-8"><div class="loader mx-auto"></div><p class="mt-4 text-stone-600">Memuat laporan...</p></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Modal Notifikasi -->
+            <div id="notification-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+                <div class="card rounded-lg max-w-sm w-full p-6 text-center">
+                    <div id="modal-icon" class="mx-auto mb-4"></div>
+                    <h3 id="modal-title" class="text-lg font-medium font-serif text-amber-900 mb-2"></h3>
+                    <p id="modal-message" class="text-sm text-stone-600"></p>
+                    <button id="modal-close-btn" class="mt-6 bg-red-800 text-white font-bold py-2 px-6 rounded-lg hover:bg-red-900 transition shadow-md shadow-red-800/20">Tutup</button>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        // --- SISTEM PENYIMPANAN LOKAL (PENGGANTI FIREBASE) ---
+        
+        const db = {
+            getReports: () => {
+                const reportsJSON = localStorage.getItem('smnida_reports');
+                return reportsJSON ? JSON.parse(reportsJSON) : [];
+            },
+            saveReports: (reports) => {
+                localStorage.setItem('smnida_reports', JSON.stringify(reports));
+            },
+            getComments: (reportId) => {
+                const commentsJSON = localStorage.getItem(`smnida_comments_${reportId}`);
+                return commentsJSON ? JSON.parse(commentsJSON) : [];
+            },
+            saveComments: (reportId, comments) => {
+                localStorage.setItem(`smnida_comments_${reportId}`, JSON.stringify(comments));
+            },
+            // Menambahkan data contoh jika database kosong
+            init: () => {
+                if (!localStorage.getItem('smnida_reports')) {
+                    const mockReports = [
+                        { id: Date.now() + 1, kode: 'SMD-123456', judul: 'Contoh: AC di Lab Komputer Mati', kategori: 'Fasilitas', deskripsi: 'AC di laboratorium komputer sudah tidak dingin selama seminggu terakhir, membuat kegiatan belajar tidak nyaman.', pelapor: 'Budi', status: 'Terkirim', timestamp: new Date().toISOString() },
+                        { id: Date.now() + 2, kode: 'SMD-654321', judul: 'Contoh: Jadwal Ekstrakurikuler Bentrok', kategori: 'Kesiswaan/Ekstrakurikuler', deskripsi: 'Jadwal ekskul basket dan musik bentrok di hari Jumat sore, mohon untuk ditinjau kembali.', pelapor: 'Siti', status: 'Diproses', timestamp: new Date().toISOString() }
+                    ];
+                    db.saveReports(mockReports);
+                }
+            }
+        };
+        db.init();
+
+        // --- GLOBAL VARIABLES ---
+        let currentUser = { name: null, role: null };
+        
+        const categories = {
+            'Fasilitas': { icon: 'wrench', color: 'amber' }, 'Akademik/Guru': { icon: 'book-open', color: 'sky' },
+            'Kesiswaan/Ekstrakurikuler': { icon: 'users', color: 'indigo' }, 'Perundungan (Bullying)': { icon: 'shield-alert', color: 'red' },
+            'Kebersihan': { icon: 'trash-2', color: 'green' }, 'Lainnya': { icon: 'more-horizontal', color: 'stone' }
+        };
+        const statusColors = {
+            'Terkirim': 'bg-sky-100 text-sky-800', 'Diproses': 'bg-amber-100 text-amber-800',
+            'Ditindaklanjuti': 'bg-indigo-100 text-indigo-800', 'Selesai': 'bg-green-100 text-green-800',
+            'Ditolak': 'bg-red-100 text-red-800'
+        };
+        const categoryColors = {
+            amber: 'bg-amber-100 text-amber-700', sky: 'bg-sky-100 text-sky-700', indigo: 'bg-indigo-100 text-indigo-700',
+            red: 'bg-red-100 text-red-700', green: 'bg-green-100 text-green-700', stone: 'bg-stone-200 text-stone-700',
+        };
+
+        // --- DOM ELEMENT SELECTORS ---
+        const pages = document.querySelectorAll('.page');
+        const appHeader = document.getElementById('app-header');
+        const loginForm = document.getElementById('login-form');
+        const loginRoleInput = document.getElementById('login-role');
+        const passwordField = document.getElementById('password-field');
+        const usernameInput = document.getElementById('login-username');
+        const passwordInput = document.getElementById('login-password');
+        const switchToSiswaBtn = document.getElementById('switch-to-siswa');
+        const switchToAdminBtn = document.getElementById('switch-to-admin');
+        const loginErrorDiv = document.getElementById('login-error');
+        const loginErrorMessage = document.getElementById('login-error-message');
+        const logoutBtn = document.getElementById('logout-btn');
+        const homeBtn = document.getElementById('home-btn');
+        const adminViewBtn = document.getElementById('admin-view-btn');
+        const reportForm = document.getElementById('report-form');
+        const namaPelaporInput = document.getElementById('nama-pelapor');
+        const trackForm = document.getElementById('track-form');
+        const trackResult = document.getElementById('track-result');
+        const adminReportList = document.getElementById('admin-report-list');
+        const categoryDashboard = document.getElementById('category-dashboard');
+        const modal = document.getElementById('notification-modal');
+        
+        // --- CORE FUNCTIONS ---
+        function showPage(pageId) {
+            pages.forEach(page => page.classList.toggle('active', page.id === pageId));
+            window.scrollTo(0, 0);
+            lucide.createIcons();
+        }
+        
+        function showNotification(type, title, message) {
+            const modalIcon = document.getElementById('modal-icon');
+            const modalTitle = document.getElementById('modal-title');
+            const modalMessage = document.getElementById('modal-message');
+            const icons = {
+                success: `<svg class="w-16 h-16 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`,
+                error: `<svg class="w-16 h-16 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`
+            };
+            modalIcon.innerHTML = icons[type] || icons.error;
+            modalTitle.textContent = title;
+            modalMessage.innerHTML = message;
+            modal.classList.remove('hidden');
+        }
+        
+        // --- LOGIN AND ROLE MANAGEMENT ---
+        function updateUIForRole() {
+            if (currentUser.role) {
+                appHeader.style.display = 'flex';
+                document.getElementById('user-name-display').textContent = currentUser.name;
+                adminViewBtn.classList.toggle('hidden', currentUser.role !== 'admin');
+                homeBtn.classList.toggle('hidden', currentUser.role === 'admin');
+            } else {
+                appHeader.style.display = 'none';
+            }
+        }
+
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value;
+            const role = loginRoleInput.value;
+            
+            loginErrorDiv.classList.add('hidden');
+
+            if (role === 'admin') {
+                if (username === 'admin' && password === 'admin123') {
+                    currentUser = { name: 'Admin', role: 'admin' };
+                    updateUIForRole();
+                    loadAdminDashboard();
+                    showPage('admin-page');
+                } else {
+                    loginErrorMessage.textContent = 'Nama pengguna atau kata sandi admin salah.';
+                    loginErrorDiv.classList.remove('hidden');
+                }
+            } else {
+                if (username) {
+                    currentUser = { name: username, role: 'siswa' };
+                    updateUIForRole();
+                    showPage('home-page');
+                } else {
+                     loginErrorMessage.textContent = 'Nama tidak boleh kosong.';
+                     loginErrorDiv.classList.remove('hidden');
+                }
+            }
+        });
+
+        logoutBtn.addEventListener('click', () => {
+            currentUser = { name: null, role: null };
+            loginForm.reset();
+            switchToAdminBtn.click();
+            updateUIForRole();
+            showPage('login-page');
+        });
+        
+        switchToSiswaBtn.addEventListener('click', () => {
+            loginRoleInput.value = 'siswa';
+            passwordField.style.display = 'none';
+            passwordInput.removeAttribute('required');
+            usernameInput.placeholder = 'Masukkan nama lengkap Anda';
+            switchToSiswaBtn.classList.add('hidden');
+            switchToAdminBtn.classList.remove('hidden');
+        });
+
+        switchToAdminBtn.addEventListener('click', () => {
+            loginRoleInput.value = 'admin';
+            passwordField.style.display = 'block';
+            passwordInput.setAttribute('required', '');
+            usernameInput.placeholder = 'Masukkan nama pengguna admin';
+            switchToAdminBtn.classList.add('hidden');
+            switchToSiswaBtn.classList.remove('hidden');
+        });
+
+        // --- NAVIGATION ---
+        homeBtn.addEventListener('click', () => { if (currentUser.role === 'siswa') showPage('home-page') });
+        adminViewBtn.addEventListener('click', () => { if (currentUser.role === 'admin') { loadAdminDashboard(); showPage('admin-page'); }});
+        document.getElementById('new-report-btn').addEventListener('click', () => {
+            reportForm.reset();
+            const radioNama = document.querySelector('#form-page input[name="identitas"][value="nama"]');
+            radioNama.checked = true;
+            namaPelaporInput.value = currentUser.name;
+            namaPelaporInput.style.display = 'block';
+            namaPelaporInput.required = true;
+            document.querySelector('#form-page input[name="identitas"]').dispatchEvent(new Event('change'));
+            showPage('form-page');
+        });
+        document.getElementById('track-report-btn').addEventListener('click', () => { trackResult.innerHTML = ''; trackForm.reset(); showPage('track-page'); });
+        document.getElementById('cancel-report-btn').addEventListener('click', () => showPage('home-page'));
+        document.getElementById('modal-close-btn').addEventListener('click', () => modal.classList.add('hidden'));
+
+        // --- REPORT SUBMISSION AND TRACKING (SISWA) ---
+         document.querySelectorAll('#form-page input[name="identitas"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                const isAnonim = e.target.value === 'anonim';
+                namaPelaporInput.style.display = isAnonim ? 'none' : 'block';
+                namaPelaporInput.required = !isAnonim;
+                if (!isAnonim) namaPelaporInput.value = currentUser.name;
+            });
+        });
+
+        reportForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const submitText = document.getElementById('submit-text');
+            const submitLoader = document.getElementById('submit-loader');
+            submitText.classList.add('hidden'); submitLoader.classList.remove('hidden');
+
+            const formData = new FormData(reportForm);
+            const isAnonim = formData.get('identitas') === 'anonim';
+            
+            const newReport = {
+                id: Date.now(),
+                kode: `SMD-${Math.floor(100000 + Math.random() * 900000)}`,
+                judul: formData.get('judul'),
+                kategori: formData.get('kategori'),
+                deskripsi: formData.get('deskripsi'),
+                pelapor: isAnonim ? 'Anonim' : formData.get('nama-pelapor'),
+                status: 'Terkirim',
+                timestamp: new Date().toISOString()
+            };
+
+            const reports = db.getReports();
+            reports.unshift(newReport); // Add to the beginning
+            db.saveReports(reports);
+
+            showNotification('success', 'Laporan Terkirim!', `Simpan kode unik ini: <br><strong class="text-lg text-red-800">${newReport.kode}</strong>`);
+            reportForm.reset();
+            showPage('home-page');
+            
+            submitText.classList.remove('hidden');
+            submitLoader.classList.add('hidden');
+        });
+
+        trackForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const code = document.getElementById('kode_laporan').value.trim().toUpperCase();
+            if (!code) return;
+            trackResult.innerHTML = `<div class="loader mx-auto"></div><p class="text-center mt-2">Mencari laporan...</p>`;
+
+            const reports = db.getReports();
+            const report = reports.find(r => r.kode === code);
+
+            setTimeout(() => { // Simulate network delay
+                if (!report) {
+                    trackResult.innerHTML = `<div class="text-center p-4 bg-red-100 border border-red-400 text-red-800 rounded-md">Laporan kode <strong>${code}</strong> tidak ditemukan.</div>`;
+                } else {
+                    const date = new Date(report.timestamp).toLocaleString('id-ID');
+                    trackResult.innerHTML = `
+                        <div class="border border-stone-200 rounded-lg p-4 shadow-sm">
+                            <h3 class="font-bold font-serif text-lg text-amber-900">${report.judul}</h3>
+                            <p class="text-sm text-stone-500 mb-2">Kode: ${report.kode} | Kategori: ${report.kategori} | Dilaporkan: ${date}</p>
+                            <p class="mb-4">${report.deskripsi}</p>
+                            <div class="flex items-center space-x-2"><span class="font-semibold">Status:</span><span class="px-3 py-1 text-sm font-semibold rounded-full ${statusColors[report.status] || ''}">${report.status}</span></div>
+                        </div>
+                        <div id="comments-section" class="mt-4"></div>`;
+                    displayComments(report.id, 'comments-section', report.pelapor === 'Anonim' ? 'Pelapor Anonim' : currentUser.name);
+                }
+            }, 300);
+        });
+
+        // --- ADMIN DASHBOARD ---
+        function loadAdminDashboard() {
+            const allReports = db.getReports();
+            updateCategoryDashboard(allReports);
+            const currentFilter = document.getElementById('report-filter-status').textContent;
+            filterReports(currentFilter);
+        }
+
+        function updateCategoryDashboard(reports) {
+            const counts = reports.reduce((acc, report) => {
+                acc[report.kategori] = (acc[report.kategori] || 0) + 1; return acc;
+            }, {});
+
+            categoryDashboard.innerHTML = `<div class="category-card cursor-pointer p-4 bg-amber-100 text-amber-800 rounded-lg" data-category="Semua">
+                <div class="flex justify-between items-center"><h4 class="font-bold">Semua</h4><i data-lucide="layout-list" class="w-5 h-5"></i></div>
+                <p class="text-2xl font-bold">${reports.length}</p></div>`;
+
+            for (const category in categories) {
+                const { icon, color } = categories[category];
+                categoryDashboard.innerHTML += `
+                    <div class="category-card cursor-pointer p-4 ${categoryColors[color]} rounded-lg" data-category="${category}">
+                        <div class="flex justify-between items-center"><h4 class="font-bold">${category}</h4><i data-lucide="${icon}" class="w-5 h-5"></i></div>
+                        <p class="text-2xl font-bold">${counts[category] || 0}</p>
+                    </div>`;
+            }
+            lucide.createIcons();
+            document.querySelectorAll('.category-card').forEach(card => card.addEventListener('click', () => filterReports(card.dataset.category)));
+        }
+        
+        function filterReports(category) {
+            const allReports = db.getReports();
+            document.getElementById('report-filter-status').textContent = category;
+            const filtered = (category === 'Semua') ? allReports : allReports.filter(r => r.kategori === category);
+            renderAdminReports(filtered);
+        }
+
+        function renderAdminReports(reports) {
+            document.getElementById('admin-loader').style.display = 'none';
+            adminReportList.innerHTML = reports.length === 0 ? `<div class="text-center text-stone-500 p-8">Tidak ada laporan untuk kategori ini.</div>` : '';
+            
+            reports.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // Sort by newest first
+
+            reports.forEach((report) => {
+                const { icon, color } = categories[report.kategori] || categories['Lainnya'];
+                const date = new Date(report.timestamp).toLocaleString('id-ID', { day:'2-digit', month:'short', year:'numeric'});
+                
+                const el = document.createElement('div');
+                el.className = 'border border-stone-200 rounded-lg bg-white/50';
+                el.innerHTML = `
+                    <details>
+                        <summary class="p-4 cursor-pointer">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h4 class="font-bold font-serif text-md text-amber-900">${report.judul}</h4>
+                                    <p class="text-xs text-stone-500">Pelapor: <strong class="text-stone-700">${report.pelapor}</strong> | ${date}</p>
+                                </div>
+                                <span class="flex items-center text-xs font-medium px-2 py-1 rounded-full ${categoryColors[color]}"><i data-lucide="${icon}" class="w-3 h-3 mr-1.5"></i>${report.kategori}</span>
+                            </div>
+                        </summary>
+                        <div class="px-4 pb-4 border-t border-stone-200 mt-2 pt-2">
+                            <p class="bg-stone-50 p-3 rounded-md my-4 border border-stone-200 text-sm">${report.deskripsi}</p>
+                            <div class="flex items-center space-x-2 mb-4">
+                                <label class="text-sm font-medium">Ubah Status:</label>
+                                <select data-id="${report.id}" class="status-select bg-white border-stone-300 rounded-md shadow-sm text-sm p-2 focus:ring-red-800 focus:border-red-800">
+                                    ${Object.keys(statusColors).map(status => `<option value="${status}" ${report.status === status ? 'selected' : ''}>${status}</option>`).join('')}
+                                </select>
+                            </div>
+                            <div id="admin-comments-${report.id}"></div>
+                        </div>
+                    </details>`;
+                adminReportList.appendChild(el);
+                displayComments(report.id, `admin-comments-${report.id}`, 'Admin');
+             });
+             lucide.createIcons();
+        }
+
+        adminReportList.addEventListener('change', (e) => {
+            if (e.target.classList.contains('status-select')) {
+                const reportId = parseInt(e.target.dataset.id);
+                const newStatus = e.target.value;
+                const reports = db.getReports();
+                const reportIndex = reports.findIndex(r => r.id === reportId);
+                if(reportIndex > -1) {
+                    reports[reportIndex].status = newStatus;
+                    db.saveReports(reports);
+                }
+            }
+        });
+
+        // --- SHARED COMMENTING SYSTEM ---
+        function displayComments(reportId, containerId, userRole) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            const comments = db.getComments(reportId);
+            comments.sort((a,b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+            container.innerHTML = `
+                <h4 class="font-bold font-serif text-md mt-6 mb-2 border-t border-stone-200 pt-4 text-amber-900">Tindak Lanjut & Komentar</h4>
+                <div id="chat-box-${reportId}" class="space-y-3 p-3 bg-stone-100 rounded-lg h-64 overflow-y-auto flex flex-col border border-stone-200"></div>
+                <form id="comment-form-${reportId}" class="mt-3">
+                    <div class="flex space-x-2">
+                        <input type="text" name="comment" class="flex-grow w-full bg-white px-3 py-2 border border-stone-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-800" placeholder="Tulis balasan..." required>
+                        <button type="submit" class="bg-red-800 text-white font-bold py-2 px-3 rounded-lg hover:bg-red-900 transition"><i data-lucide="send" class="w-5 h-5"></i></button>
+                    </div>
+                </form>`;
+            
+            const chatBox = document.getElementById(`chat-box-${reportId}`);
+            if (comments.length === 0) {
+                chatBox.innerHTML = `<p class="text-center text-stone-500 text-sm m-auto">Belum ada komentar.</p>`;
+            } else {
+                chatBox.innerHTML = '';
+                comments.forEach(comment => {
+                    const commentTime = new Date(comment.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                    chatBox.innerHTML += `<div class="chat-bubble ${comment.pengirim === 'Admin' ? 'chat-admin' : 'chat-pelapor'}"><p class="text-sm">${comment.teks}</p><p class="text-xs text-stone-400 mt-1 text-right"><strong>${comment.pengirim}</strong> - ${commentTime}</p></div>`;
+                });
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+            lucide.createIcons();
+            
+            document.getElementById(`comment-form-${reportId}`).addEventListener('submit', (e) => {
+                e.preventDefault();
+                const commentInput = e.target.elements.comment;
+                const commentText = commentInput.value.trim();
+                if (!commentText) return;
+
+                const newComment = {
+                    pengirim: userRole,
+                    teks: commentText,
+                    timestamp: new Date().toISOString()
+                };
+                const currentComments = db.getComments(reportId);
+                currentComments.push(newComment);
+                db.saveComments(reportId, currentComments);
+                
+                commentInput.value = '';
+                displayComments(reportId, containerId, userRole); // Refresh view
+            });
+        }
+        
+        // Initialize App
+        lucide.createIcons();
+
+    </script>
+</body>
+</html>
